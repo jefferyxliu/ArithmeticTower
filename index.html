@@ -2,10 +2,16 @@
 <html lang="en">
   <title>Arithmetic Tower</title>
   <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
       .canvasframe {
         /*float: left;*/
         margin: 8px;
+        grid-row-start: 1;
+        grid-row-end: 1;
+        grid-column-start: 1;
+        grid-column-end: 1;
+        margin-bottom: 0px;
       }
       canvas {
         width: 550px;
@@ -16,14 +22,18 @@
       }
       .control {
         float: left;
-        height: 450px;
+        /*height: 450px;*/
         margin: 8px;
         text-align: center;
-        padding-left: 5px;
+        /*padding-left: 5px;
         padding-right: 5px;
-        padding-top: 70px;
-        padding-bottom: 30px;
-        /* border: 1pt solid black; */
+        /*padding-top: 70px;
+        padding-bottom: 30px;*/
+        grid-row-start: 1;
+        grid-row-end: 1;
+        grid-column-start: 2;
+        grid-column-end: 2;
+        /*border: 1pt solid black;*/
       }
       .d-pad-grid {
         display: grid;
@@ -105,27 +115,27 @@
       }
       .row {
         display: grid;
+        width: 866px;
         /*width: 800px;*/
         /*width: 1024px;*/
         /*height: 768px;*/
         border: 1pt solid black;
         background-color: #f1f4f9;
         border-radius: 8px;
-        grid-template-columns: auto auto;
-      }
-      .row:after {
-        content: "";
-        display: table;
-        clear: both;
+        grid-template-columns: 566px 300px;
       }
       textarea {
-        width: 550px;
+        width: 547px;
         height: 100px;
-        margin: 8px;
+        /*width: 550px;
+        height: 100px;*/
+        margin-top: -100px;
+        margin-left: 0px;
         border-radius: 8px;
         color: black;
-        background-color: whitesmoke;
+        /*background-color: whitesmoke;*/
         border: 1pt solid black;
+        background-color: rgba(200,200,200,0.8);
       }
   </style>
   </head>
@@ -133,6 +143,7 @@
 <div class = "row">
     <div class = "canvasframe">
         <canvas id="canvas" width="550" height="550"></canvas>
+        <textarea id='dialog' disabled></textarea>
     </div>
     <div class="control">
         
@@ -166,7 +177,6 @@
           <input class="d-pad-right" id="d-pad-right" type="button" value=&#8594;></input>
           <input class="d-pad-down" id="d-pad-down" type="button" value=&#8595;></input>
         </div>
-        <br>
         <!-- Original d-pad
         <br>
         <input class="d-pad" type="button" value=&#8598;></input><input class="d-pad" type="button" value=&#8593;></input><input class="d-pad" type="button" value=&#8599;></input><br>
@@ -174,8 +184,9 @@
         <input class="d-pad" type="button" value=&#8601;></input><input class="d-pad" type="button" value=&#8595;></input><input class="d-pad" type="button" value=&#8600;></input><br>
         <br>
         -->
+        
     </div>
-    <textarea id='dialog' disabled></textarea>
+    
 </div>
 <script>
 
