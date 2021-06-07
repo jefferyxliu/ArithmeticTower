@@ -398,11 +398,35 @@ class Enemy extends Sprite {
 }
 
 class Item {
-    constructor(name, info, effect) {
-        this.name = name;
-        this.info = info;
-        this.effect = effect
-    }
+  constructor(name, info, effect) {
+    this.name = name;
+    this.info = info;
+    this.effect = effect
+  }
+}
+
+class Level {
+  constructor(longname, shortname, tilemap, sprites) {
+    this.longname = longname;
+    this.shortname = shortname;
+    this.tilemap = tilemap;
+    this.sprites = sprites;
+  }
+  load(x = Player.x, y = Player.y, d = Player.d) {
+    Player.x = x;
+    Player.y = y;
+    Player.d = d;
+    Player.display_spells();
+    TileMap = this.tilemap;
+    spriteList = this.sprites;
+    turn = 0;
+    levelName = this.shortname;
+    ctx.clearRect(0,0, 11 * w, 11 * h);
+    ctx.font = '48px serif';
+    ctx.fillStyle = 'rgb(10,10,10)';
+    ctx.fillText(this.longname, 10, 50);
+    setTimeout(draw, 1500);
+  }
 }
 
 const canvas = document.getElementById('canvas');
@@ -418,7 +442,7 @@ let Player = new Sprite('Mathemagician', 'rgb(65,105,225)', 0, 100, 5, 1, 1, [
   ['multiplicative', []],
   ['pow', []],
 ]);
-Player.display_spells();
+let TileMap, spriteList, levelName, turn;
 
 function debug_mode() {
   Player.score = Infinity;
@@ -435,7 +459,7 @@ function debug_mode() {
   draw();
 }
 
-let TileMap = 
+const default_TileMap = 
 [
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -463,9 +487,10 @@ let TileMap =
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
 [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
-[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0]
+[0, 0, 0, 0, 1, [1, [5,2]], 1, 0, 0, 0, 0],
+[0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
 ];
-let spriteList = [
+const default_spriteList = [
 Player,
 new Enemy('Magic Door', 'grey', 0, 5, 5, 3, 1, 0),
 new Enemy('Gatekeeper 1', 'coral', 0, 3, 2, 6, 3, 3, make_spells(2)),
@@ -477,8 +502,26 @@ new Enemy('Guard 4', 'maroon', 0, 5, 5, 16, 1, 1),
 new Enemy('Gatekeeper 3', 'coral', 0, 3, 2, 22, 1, 3, make_spells(2)),
 new Enemy('Gatekeeper 4', 'coral', 0, 3, 8, 22, 1, 3, make_spells(2)),
 new Enemy('Boss', 'purple', 0, 30, 5, 14, 3, 1, make_spells(5)),
-new Enemy('Magic Door 2', 'grey', 0, 347863257, 5, 25, 3, 0),
+new Enemy('Magic Door 2', 'grey', 0, 5, 5, 25, 3, 0),
 ];
+const L1 = new Level('Ground Floor', 'Arithmetic Tower G', default_TileMap, default_spriteList);
+L1.load(5,1,1);
+const L2 = new Level('First Floor', 'Arithmetic Tower 1F', [
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, [0, [5,26]], 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0]
+],
+[
+Player, 
+new Enemy('Magic Door 1', 'grey', 0, 100, 5, 1, 3, 0),
+new Enemy('Magic Door 2', 'grey', 0, 100, 5, 3, 1, 0),
+new Enemy('Magic Door 3', 'grey', 0, 100, 4, 2, 2, 0),
+new Enemy('Magic Door 4', 'grey', 0, 100, 6, 2, 0, 0),
+]
+)
+const levelList = [L1, L2]
+
 
 function test_view() {
   for (const sprite of spriteList) {
@@ -510,14 +553,22 @@ function rotate(x,y,d) {
 
 function draw(style = 'abstract') {
   ctx.clearRect(0,0, 11 * w, 11 * h);
-  ctx.fillStyle = 'rgb(50,50,50)';
+  
   for (let y = 0; y < TileMap.length; y++) {
     const row = TileMap[y];
     for (let x = 0; x < row.length; x++) {
       if (row[x] == 1) {
         const coords = screen_coords(x, y);
         if (style == 'abstract') {
-          ctx.fillRect(coords[0],coords[1],w,h)
+          ctx.fillStyle = 'rgb(50,50,50)';
+          ctx.fillRect(...coords,w,h)
+        }
+      }
+      if (typeof row[x] != 'number') {
+        const coords = screen_coords(x, y);
+        if (style == 'abstract') {
+          ctx.fillStyle = 'yellow';
+          ctx.fillRect(...coords,w,h)
         }
       }
     }
@@ -536,6 +587,11 @@ function draw(style = 'abstract') {
       ctx.fill();
     }
   }
+  ctx.font = '20px serif';
+  ctx.fillStyle = 'rgb(0,0,0)';
+  ctx.fillText(levelName, 5, 20);
+  ctx.fillStyle = 'rgb(255,255,255)';
+  ctx.strokeText(levelName, 5, 20);
 }
 
 function select_dialog() {
@@ -572,18 +628,26 @@ function enemyTurn() {
 
 function player_input(action, n) {
   dialog.value = ''
+  let dr = true;
   if (action == 'move') {
     if (Player.d == n && (tile_is_empty(Player.selected_x(),Player.selected_y()) || Player.debug)) {
       Player.move();
-      enemyTurn()
-      turn += 1
+      enemyTurn();
+      turn += 1;
     }
     if (n == 5) {
-      enemyTurn()
-      turn += 1
+      if (typeof TileMap[Player.y][Player.x] != 'number') {
+        const L = TileMap[Player.y][Player.x];
+        levelList[L[0]].load(...L[1]);
+        dr = false;
+      }
+      else {
+        enemyTurn();
+        turn += 1;
+      }
     }
     else {
-      Player.d = n
+      Player.d = n;
     }
   }
   if (action == 'attack') {
@@ -596,16 +660,15 @@ function player_input(action, n) {
       sign = document.getElementById(type + '-sign').value;
     }
     Player.attack(sign, parseInt(document.getElementById(type).value, 10));
-    enemyTurn()
+    enemyTurn();
     turn += 1;
   }
   select_dialog();
   remove();
-  draw();
+  if (dr) {
+    draw();
+  }
 }
-
-let turn = 0;
-player_input('move', 5)
 
 document.getElementById("d-pad-up").onclick = function() {
   player_input('move', 1)
