@@ -4,7 +4,7 @@
   <head>
   <style>
       .canvasframe {
-        float: left;
+        /*float: left;*/
         margin: 8px;
       }
       canvas {
@@ -39,6 +39,7 @@
         grid-row-end: 1;
         grid-column-start: 2;
         grid-column-end: 2;
+        border-radius: 1px;
       }
       .d-pad-left {
         width: 50px;
@@ -48,6 +49,7 @@
         grid-row-end: 2;
         grid-column-start: 1;
         grid-column-end: 1;
+        border-radius: 1px;
       }
       .d-pad-center {
         width: 50px;
@@ -57,6 +59,7 @@
         grid-row-end: 2;
         grid-column-start: 2;
         grid-column-end: 2;
+        border-radius: 1px;
       }
       .d-pad-right {
         width: 50px;
@@ -66,6 +69,7 @@
         grid-row-end: 2;
         grid-column-start: 3;
         grid-column-end: 3;
+        border-radius: 1px;
       }
       .d-pad-down {
         width: 50px;
@@ -75,17 +79,19 @@
         grid-row-end: 3;
         grid-column-start: 2;
         grid-column-end: 2;
+        border-radius: 1px;
       }
       .d-pad {
         width: 50px;
         height: 50px;
-        margin: 2px; 
+        margin: 2px;
       }
       .action-select {
         margin: 2px;
         height: 30px;
         width: 120px;
         text-align: left;
+        border-radius: 1px;
       }
       .action-select-option {
         display: inline-block;
@@ -98,12 +104,14 @@
         margin: 2px;
       }
       .row {
-        width: 800px;
-        /* width: 1024px;
-        height: 768px; */
+        display: grid;
+        /*width: 800px;*/
+        /*width: 1024px;*/
+        /*height: 768px;*/
         border: 1pt solid black;
         background-color: #f1f4f9;
         border-radius: 8px;
+        grid-template-columns: auto auto;
       }
       .row:after {
         content: "";
