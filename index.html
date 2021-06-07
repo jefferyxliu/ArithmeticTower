@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+  <title>Arithmetic Tower</title>
+  <head>
+  <style>
+      .canvasframe {
+        float: left;
+        margin: 8px;
+      }
+      canvas {
+        width: 550px;
+        height: 550px;
+        border: 1pt solid black;
+        background-color: whitesmoke;
+        border-radius: 8px;
+      }
+      .control {
+        float: left;
+        height: 450px;
+        margin: 8px;
+        text-align: center;
+        padding-left: 5px;
+        padding-right: 5px;
+        padding-top: 70px;
+        padding-bottom: 30px;
+        /* border: 1pt solid black; */
+      }
+      .d-pad-grid {
+        display: grid;
+        width: fit-content;
+        margin: auto;
+        grid-template-columns: 54px 54px 54px;
+      }
+      .d-pad-up {
+        width: 50px;
+        height: 50px;
+        margin: 2px;
+        grid-row-start: 1;
+        grid-row-end: 1;
+        grid-column-start: 2;
+        grid-column-end: 2;
+      }
+      .d-pad-left {
+        width: 50px;
+        height: 50px;
+        margin: 2px;
+        grid-row-start: 2;
+        grid-row-end: 2;
+        grid-column-start: 1;
+        grid-column-end: 1;
+      }
+      .d-pad-center {
+        width: 50px;
+        height: 50px;
+        margin: 2px;
+        grid-row-start: 2;
+        grid-row-end: 2;
+        grid-column-start: 2;
+        grid-column-end: 2;
+      }
+      .d-pad-right {
+        width: 50px;
+        height: 50px;
+        margin: 2px;
+        grid-row-start: 2;
+        grid-row-end: 2;
+        grid-column-start: 3;
+        grid-column-end: 3;
+      }
+      .d-pad-down {
+        width: 50px;
+        height: 50px;
+        margin: 2px;
+        grid-row-start: 3;
+        grid-row-end: 3;
+        grid-column-start: 2;
+        grid-column-end: 2;
+      }
+      .d-pad {
+        width: 50px;
+        height: 50px;
+        margin: 2px; 
+      }
+      .action-select {
+        margin: 2px;
+        height: 30px;
+        width: 120px;
+        text-align: left;
+      }
+      .action-select-option {
+        display: inline-block;
+        margin: 2px;
+        height: 30px;
+        width: 30px;
+        text-align: center;
+      }
+      .item-select {
+        margin: 2px;
+      }
+      .row {
+        width: 800px;
+        /* width: 1024px;
+        height: 768px; */
+        border: 1pt solid black;
+        background-color: #f1f4f9;
+        border-radius: 8px;
+      }
+      .row:after {
+        content: "";
+        display: table;
+        clear: both;
+      }
+      textarea {
+        width: 550px;
+        height: 100px;
+        margin: 8px;
+        border-radius: 8px;
+        color: black;
+        background-color: whitesmoke;
+        border: 1pt solid black;
+      }
+  </style>
+  </head>
+<body>
+<div class = "row">
+    <div class = "canvasframe">
+        <canvas id="canvas" width="550" height="550"></canvas>
+    </div>
+    <div class="control">
+        
+        <label>SPELLS</label><br>
+        <div class='action'>
+          <input class="action-select" id="add" type="button" value="> Additive:"></input>
+          <select class="action-select-option" id="additive-sign"></select>
+          <select class="action-select-option" id="additive"></select>
+        </div>
+        <div class='action'>
+          <input class="action-select" id="multiply" type="button" value="> Multiplicative:"></input>
+          <select class="action-select-option" id="multiplicative-sign"></select>
+          <select class="action-select-option" id="multiplicative"></select>
+        </div>
+        <div class='action'>
+          <input class="action-select" id="power" type="button" value="> Exponential:"></input>
+          <div class="action-select-option">^</div>
+          <select class="action-select-option" id="pow"></select>
+        </div>
+        <br>
+        <label>INVENTORY</label><br>
+        <select id="inventory">
+            <option>Sample Item x1</option>
+        </select><input class="item-select" type="button" value='Info'></input><input class="item-select" type="button" value='Use'></input><br>
+        <br>
+        <label>MOVE</label><br>
+        <div class='d-pad-grid'>
+          <input class="d-pad-up" id="d-pad-up" type="button" value=&#8593;></input>
+          <input class="d-pad-left" id="d-pad-left" type="button" value=&#8592;></input>
+          <input class="d-pad-center" id="d-pad-center" type="button" value=&#8729;></input>
+          <input class="d-pad-right" id="d-pad-right" type="button" value=&#8594;></input>
+          <input class="d-pad-down" id="d-pad-down" type="button" value=&#8595;></input>
+        </div>
+        <br>
+        <!-- Original d-pad
+        <br>
+        <input class="d-pad" type="button" value=&#8598;></input><input class="d-pad" type="button" value=&#8593;></input><input class="d-pad" type="button" value=&#8599;></input><br>
+        <input class="d-pad" type="button" value=&#8592;></input><input class="d-pad" type="button" value=&#8729;></input><input class="d-pad" type="button" value=&#8594;></input><br>
+        <input class="d-pad" type="button" value=&#8601;></input><input class="d-pad" type="button" value=&#8595;></input><input class="d-pad" type="button" value=&#8600;></input><br>
+        <br>
+        -->
+    </div>
+    <textarea id='dialog' disabled></textarea>
+</div>
+<script>
+
+//class Q {} Make Rational Numbers
+
+function pow(a, b) {
+  return a ** b;
+}
+
+function distance(x1, y1, x2, y2) {
+  return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+}
+
+function make_spells(n) {
+  return [
+  ['additive-sign', ['+']],
+  ['additive', [...Array(n + 1).keys()]],
+  ['multiplicative-sign', []],
+  ['multiplicative', []],
+  ['pow', []],
+]
+}
+let default_spells = [
+  ['additive-sign', ['+']],
+  ['additive', [0, 1]],
+  ['multiplicative-sign', []],
+  ['multiplicative', []],
+  ['pow', []],
+]
+
+class Sprite {
+  constructor(name, color, score, weak, x, y, d = 0, spells = default_spells) {
+    this.name = name;
+    this.color = color;
+    this.x = x;
+    this.y = y;
+    this.d = d; // cardinal direction 0 = east(+x), 1 = north(+y), 2 = west(-x), 3 = south(-y)
+    this.score = score;
+    this.weak = weak;
+    this.spells = new Map(spells);
+    this.isEnemy = false;
+    this.debug = false;
+  }
+
+  toString() {
+    return `${this.name} | current: ${this.score}; weakness: ${this.weak}`;
+  }
+
+  get_coord() {
+    return `coordinates: (${this.x}, ${this.y}) direction: ${this.d}`
+  }
+
+  selected_x(d = this.d, dist = 1) {
+    return this.x + dist * (d == 0) - dist * (d == 2);
+  }
+  selected_y(d = this.d, dist = 1) {
+    return this.y + dist * (d == 1) - dist * (d == 3);
+  }
+
+  move() {
+    this.x = this.selected_x();
+    this.y = this.selected_y();
+    dialog.value += `${this.name} moved to (${this.x}, ${this.y}).\n`
+  }
+
+  get_sprite() {
+    for (let i = 0; i < spriteList.length; i++) {
+      const sprite = spriteList[i];
+      if (this.selected_x() == sprite.x && this.selected_y() == sprite.y) {
+        return sprite;
+      }
+    }
+    return false;
+  }
+
+  display_spells() {
+    for (let [key, value] of this.spells) {
+      let st = '';
+      for (let i = 0; i < value.length; i++) {
+        st += `<option>${value[i]}</option>\n`;
+      }
+      document.getElementById(key).innerHTML = st;
+    }
+  }
+
+  upgrade_spells(key,value) {
+    let value_list = this.spells.get(key);
+    value_list.push(value);
+    this.spells.set(key, value_list);
+  }
+
+  attack(operation, amount) {
+    const target = this.get_sprite();
+    dialog.value += `${this.name} used `
+    if (operation == '+') {
+      dialog.value += `addition spell (+${amount})`
+      if (target) {
+        target.score = target.score + amount;
+        dialog.value += ` on ${target.name}.\n`
+      }
+      else {dialog.value += `, but there was no target.\n`}
+    }
+    if (operation == '-') {
+      dialog.value += `subtraction spell (-${amount})`
+      if (target) {
+        target.score = target.score - amount;
+        dialog.value += ` on ${target.name}.\n`
+      }
+      else {dialog.value += `, but there was no target.\n`}
+    }
+    if (operation == '*') {
+      dialog.value += `multiplication spell (*${amount})`
+      if (target) {
+        target.score = target.score * amount;
+        dialog.value += ` on ${target.name}.\n`
+      }
+      else {dialog.value += `, but there was no target.\n`}
+    }
+    if (operation == '/') {
+      dialog.value += `division spell (/${amount})`
+      if (target) {
+        target.score = target.score / amount;
+        dialog.value += ` on ${target.name}.\n`
+      }
+      else {dialog.value += `, but there was no target.\n`}
+    }
+    if (operation == '^') {
+      dialog.value += `power spell (^${amount})`
+      if (target) {
+        target.score = pow(target.score, amount);
+        dialog.value += ` on ${target.name}.\n`
+      }
+      else {dialog.value += `, but there was no target.\n`}
+    }
+  }
+}
+
+class Enemy extends Sprite {
+  constructor(name, color, score, weak, x, y, d = 0, nature = 0, spells = default_spells) {
+    super(name, color, score, weak, x, y, d, spells);
+    this.detection_radius = Math.abs(nature);// Enemy will move or attack if Player within distance
+    this.nature = Math.sign(nature); //+ = Aggresive (moving toward Player),  - = Timid (moving away from Player)
+    this.isEnemy = true;
+  }
+  AI_action(target) {
+    const dist = distance(this.x, this.y, target.x, target.y);
+    if (dist > this.detection_radius) {
+      return false;
+    }
+    let distdirection = [0,0,0,0];
+    for (let d = 0; d < 4; d++) {
+      distdirection[d] = distance(this.selected_x(d), this.selected_y(d), target.x, target.y);
+    }
+    if (this.nature == 1) {
+      for (let d = 0; d < 4; d++) {
+        if (distdirection[d] < dist) {
+          if (dist == 1) {
+            this.d = d;
+            return 'attack';
+          }
+          if (tile_is_empty(this.selected_x(d), this.selected_y(d))) {
+            this.d = d;
+            return 'move';
+          }
+        }
+      }
+    }
+    if (this.nature == -1) {
+      for (let d = 0; d < 4; d++) {
+        if (distdirection[d] > dist) {
+          if (tile_is_empty(this.selected_x(d), this.selected_y(d))) {
+            this.d = d;
+            return 'move';
+          }
+        }
+      }
+      for (let d = 0; d < 4; d++) {
+        if (distdirection[d] == 0) {
+          this.d = d;
+          return 'attack';
+        }
+      }
+    }
+    return false; 
+  }
+  AI_attack(target) {
+    const s = target.score;
+    const w = target.weak;
+    const calcs = [];
+    if (!this.spells.get('additive-sign').includes('-')) {
+      const m = Math.max(...this.spells.get('additive').filter(n => n <= Math.max(0, w - s)));
+      return ['+', m]
+    }
+    else {
+      if (w > s) {
+        return ['+', Math.max(...this.spells.get('additive').filter(n => n <= w - s))]
+      }
+      if (s > w) {
+        return ['-', Math.max(...this.spells.get('additive').filter(n => n <= s - w))]
+      }
+      if (s == w) {
+        return ['+', 0]
+      }
+    }
+  }
+}
+
+class Item {
+    constructor(name, info, effect) {
+        this.name = name;
+        this.info = info;
+        this.effect = effect
+    }
+}
+
+const canvas = document.getElementById('canvas');
+const h = 50;
+const w = 50;
+const ctx = canvas.getContext('2d');
+const dialog = document.getElementById("dialog");
+
+let Player = new Sprite('Mathemagician', 'rgb(65,105,225)', 0, 100, 5, 1, 1, [
+  ['additive-sign', ['+']],
+  ['additive', [1, 2]],
+  ['multiplicative-sign', []],
+  ['multiplicative', []],
+  ['pow', []],
+]);
+Player.display_spells();
+
+function debug_mode() {
+  Player.score = Infinity;
+  Player.color = 'rgba(65,105,225,0.3)';
+  Player.spells = new Map([
+  ['additive-sign', ['+','-']],
+  ['additive', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
+  ['multiplicative-sign', ['*']],
+  ['multiplicative', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
+  ['pow', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
+  ])
+  Player.display_spells();
+  Player.debug = true;
+  draw();
+}
+
+let TileMap = 
+[
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+[1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+[1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+[1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+[1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0]
+];
+let spriteList = [
+Player,
+new Enemy('Magic Door', 'grey', 0, 5, 5, 3, 1, 0),
+new Enemy('Gatekeeper 1', 'coral', 0, 3, 2, 6, 3, 3, make_spells(2)),
+new Enemy('Gatekeeper 2', 'coral', 0, 3, 8, 6, 3, 3, make_spells(2)),
+new Enemy('Guard 1', 'maroon', 0, 5, 5, 12, 3, 1),
+new Enemy('Guard 2', 'maroon', 0, 5, 7, 14, 0, 1),
+new Enemy('Guard 3', 'maroon', 0, 5, 3, 14, 2, 1),
+new Enemy('Guard 4', 'maroon', 0, 5, 5, 16, 1, 1),
+new Enemy('Gatekeeper 3', 'coral', 0, 3, 2, 22, 1, 3, make_spells(2)),
+new Enemy('Gatekeeper 4', 'coral', 0, 3, 8, 22, 1, 3, make_spells(2)),
+new Enemy('Boss', 'purple', 0, 30, 5, 14, 3, 1, make_spells(5)),
+new Enemy('Magic Door 2', 'grey', 0, 347863257, 5, 25, 3, 0),
+];
+
+function test_view() {
+  for (const sprite of spriteList) {
+    console.log(sprite.toString());
+    console.log(sprite.get_coord());
+  }
+}
+
+function tile_is_empty(x,y) {
+  for (const sprite of spriteList) {
+    if (x == sprite.x && y == sprite.y) {
+      return false;
+    }
+  }
+  if (0 <= y && y < TileMap.length && 0 <= x && x < TileMap[y].length) {
+    return TileMap[y][x] != 1;
+  }
+  return true;
+}
+
+function screen_coords(x,y) {
+  return [w * (x - Player.x + 5), h * (5 - (y - Player.y))]
+}
+function rotate(x,y,d) {
+  const nx = [1, 0, -1, 0][d] * (x - w/2) + [0, -1, 0, 1][d] * (y-h/2) + w/2;
+  const ny = [0, 1, 0, -1][d] * (x - w/2) + [1, 0, -1, 0][d] * (y-h/2) + h/2;
+  return [nx,ny]
+}
+
+function draw(style = 'abstract') {
+  ctx.clearRect(0,0, 11 * w, 11 * h);
+  ctx.fillStyle = 'rgb(50,50,50)';
+  for (let y = 0; y < TileMap.length; y++) {
+    const row = TileMap[y];
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] == 1) {
+        const coords = screen_coords(x, y);
+        if (style == 'abstract') {
+          ctx.fillRect(coords[0],coords[1],w,h)
+        }
+      }
+    }
+  }
+  for (const sprite of spriteList) {
+    const coords = screen_coords(sprite.x, sprite.y);
+    if (style == 'abstract') {
+      ctx.fillStyle = sprite.color;
+      const p1 = rotate(0,0,sprite.d);
+      const p2 = rotate(w,h/2,sprite.d);
+      const p3 = rotate(0,h,sprite.d);
+      ctx.beginPath();
+      ctx.moveTo(coords[0] + p1[0], coords[1] + h - p1[1]);
+      ctx.lineTo(coords[0] + p2[0], coords[1] + h - p2[1]);
+      ctx.lineTo(coords[0] + p3[0], coords[1] + h - p3[1]);
+      ctx.fill();
+    }
+  }
+}
+
+function select_dialog() {
+  dialog.value += Player.toString() + '\n'
+  const target = Player.get_sprite();
+  if (target) {
+    dialog.value += target.toString() + '\n'
+  }
+}
+
+function remove() {
+  spriteList = spriteList.filter(sprite => {
+    if (sprite.score == sprite.weak) {
+      dialog.value += `${sprite.name} was defeated.\n`}
+    return sprite.score != sprite.weak
+  })
+}
+
+function enemyTurn() {
+  for (let i = 0; i < spriteList.length; i++) {
+    const enemy = spriteList[i];
+    if (enemy.isEnemy) {
+      const action = enemy.AI_action(Player);
+      if (action == 'move') {
+        enemy.move();
+      }
+      if (action == 'attack') {
+        const auto = enemy.AI_attack(Player);
+        enemy.attack(auto[0], auto[1]);
+      }
+    }
+  }
+}
+
+function player_input(action, n) {
+  dialog.value = ''
+  if (action == 'move') {
+    if (Player.d == n && (tile_is_empty(Player.selected_x(),Player.selected_y()) || Player.debug)) {
+      Player.move();
+      enemyTurn()
+      turn += 1
+    }
+    if (n == 5) {
+      enemyTurn()
+      turn += 1
+    }
+    else {
+      Player.d = n
+    }
+  }
+  if (action == 'attack') {
+    const type = ['additive', 'multiplicative', 'pow'][n];
+    let sign;
+    if (n == 2) {
+      sign = '^';
+    }
+    else {
+      sign = document.getElementById(type + '-sign').value;
+    }
+    Player.attack(sign, parseInt(document.getElementById(type).value, 10));
+    enemyTurn()
+    turn += 1;
+  }
+  select_dialog();
+  remove();
+  draw();
+}
+
+let turn = 0;
+player_input('move', 5)
+
+document.getElementById("d-pad-up").onclick = function() {
+  player_input('move', 1)
+}
+document.getElementById("d-pad-left").onclick = function() {
+  player_input('move', 2)
+}
+document.getElementById("d-pad-right").onclick = function() {
+  player_input('move', 0)
+}
+document.getElementById("d-pad-down").onclick = function() {
+  player_input('move', 3)
+}
+document.getElementById("d-pad-center").onclick = function() {
+  player_input('move', 5)
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code == 'ArrowRight') {
+    player_input('move', 0);
+  }
+  if (e.code == 'ArrowLeft') {
+    player_input('move', 2);
+  }
+  if (e.code == 'ArrowUp') {
+    player_input('move', 1);
+  }
+  if (e.code == 'ArrowDown') {
+    player_input('move', 3);
+  }
+  if (e.code == 'Space') {
+    player_input('move', 5);
+  }
+  if (e.code == 'KeyZ') {
+    player_input('attack', 0);
+  }
+  if (e.code == 'KeyX') {
+    player_input('attack', 1);
+  }
+  if (e.code == 'KeyC') {
+    player_input('attack', 2);
+  }
+  if (e.code == 'KeyP') {
+    debug_mode();
+  }
+});
+
+document.getElementById("add").onclick = function() {
+  player_input('attack', 0)
+}
+document.getElementById("multiply").onclick = function() {
+  player_input('attack', 1)
+}
+document.getElementById("power").onclick = function() {
+  player_input('attack', 2)
+}
+
+
+</script>
+</body>
