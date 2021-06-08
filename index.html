@@ -193,10 +193,172 @@
 </div>
 <script>
 
-//class Q {} Make Rational Numbers
+function gcd(a, b) {
+  let t;
+  while(b) {
+    t = a;
+    a = b;
+    b = t % b;
+  }
+  return Math.abs(a)
+}
+
+class Q {
+  constructor(n, d) {
+    if (d == 0) {
+      throw 'Error: division by zero.'
+    }
+    if (d < 0) {
+      n = -n;
+      d = -d;
+    }
+    this.n = n;
+    this.d = d;
+    this.simplify();
+  }
+  toString() {
+    if (this.d == 1) {
+      return `${this.n}`;
+    }
+    return `${this.n}/${this.d}`
+  }
+  simplify() {
+    const c = gcd(this.n, this.d)
+    this.n = this.n / c;
+    this.d = this.d / c;
+  }
+  equals(that) {
+    if (that instanceof Q) {
+      return this.n * that.d == that.n * this.d;
+    }
+    if (Number.isInteger(that)) {
+      return this.n == that * this.d;
+    }
+  }
+  add(that) {
+    if (that instanceof Q) {
+      return new Q(this.n * that.d + that.n * this.d, this.d * that.d);
+    }
+    if (Number.isInteger(that)) {
+      return new Q(this.n + that * this.d, this.d);
+    }
+  }
+  neg() {
+    return new Q(-this.n, this.d);
+  }
+  sub(that) {
+    if (that instanceof Q) {
+      return this.add(that.neg());
+    }
+    if (Number.isInteger(that)) {
+      return this.add(-that);
+    }
+  }
+  mult(that) {
+    if (that instanceof Q) {
+      return new Q(this.n * that.n, this.d * that.d);
+    }
+    if (Number.isInteger(that)) {
+      return new Q(this.n * that, this.d);
+    }
+  }
+  inv() {
+    return new Q(this.d, this.n);
+  }
+  div(that) {
+    if (that instanceof Q) {
+      return this.mult(that.inv());
+    }
+    if (Number.isInteger(that)) {
+      return this.mult(new Q(1,that));
+    }
+  }
+
+  pow(a) {
+    if (!Number.isInteger(that)) {
+      throw 'Error: Only integer exponents permitted.'
+    }
+    if (a >= 0) {
+      return new Q(this.n ** a, this.d ** a);
+    }
+    if (a < 0) {
+      return new Q(this.d ** (-a), this.n ** (-a));
+    }
+  }
+}
+
+function equals(a, b) {
+  if (Number.isInteger(a) && Number.isInteger(b)) {
+    return a == b;
+  }
+  if (a instanceof Q) {
+    return a.equals(b);
+  }
+  if (b instanceof Q) {
+    return b.equals(a);
+  }
+}
+
+function add(a, b) {
+  if (Number.isInteger(a) && Number.isInteger(b)) {
+    return a + b;
+  }
+  if (a instanceof Q) {
+    return a.add(b);
+  }
+  if (b instanceof Q) {
+    return b.add(a);
+  }
+}
+
+function neg(a) {
+  if (Number.isInteger(a)) {
+    return -a;
+  }
+  if (a instanceof Q) {
+    return a.neg();
+  }
+}
+
+function sub(a, b) {
+  return add(a,neg(b))
+}
+
+function mult(a, b) {
+  if (Number.isInteger(a) && Number.isInteger(b)) {
+    return a * b;
+  }
+  if (a instanceof Q) {
+    return a.mult(b);
+  }
+  if (b instanceof Q) {
+    return b.mult(a);
+  }
+}
+
+function inv(a) {
+  if (Number.isInteger(a)) {
+    return new Q(1, a);
+  }
+  if (a instanceof Q) {
+    return a.inv();
+  }
+}
+
+function div(a, b) {
+  return mult(a, inv(b))
+}
 
 function pow(a, b) {
-  return a ** b;
+  if (!Number.isInteger(b)) {
+    throw 'Error: Only integer exponents permitted.'
+  }
+  if (Number.isInteger(a)) {
+    return a ** b;
+  }
+  if (a instanceof Q) {
+    return a.pow(b);
+  }
 }
 
 function distance(x1, y1, x2, y2) {
@@ -235,7 +397,15 @@ class Sprite {
   }
 
   toString() {
-    return `${this.name} | current: ${this.score}; weakness: ${this.weak}`;
+    let c = this.score;
+    let w = this.weak;
+    if (c instanceof Q) {
+      c = c.toString()
+    }
+    if (w instanceof Q) {
+      w = w.toString()
+    }
+    return `${this.name} | current: ${c}; weakness: ${w}`;
   }
 
   get_coord() {
@@ -287,7 +457,7 @@ class Sprite {
     if (operation == '+') {
       dialog.value += `addition spell (+${amount})`
       if (target) {
-        target.score = target.score + amount;
+        target.score = add(target.score, amount);
         dialog.value += ` on ${target.name}.\n`
       }
       else {dialog.value += `, but there was no target.\n`}
@@ -295,7 +465,7 @@ class Sprite {
     if (operation == '-') {
       dialog.value += `subtraction spell (-${amount})`
       if (target) {
-        target.score = target.score - amount;
+        target.score = sub(target.score, amount);
         dialog.value += ` on ${target.name}.\n`
       }
       else {dialog.value += `, but there was no target.\n`}
@@ -303,7 +473,7 @@ class Sprite {
     if (operation == '*') {
       dialog.value += `multiplication spell (*${amount})`
       if (target) {
-        target.score = target.score * amount;
+        target.score = mult(target.score, amount);
         dialog.value += ` on ${target.name}.\n`
       }
       else {dialog.value += `, but there was no target.\n`}
@@ -311,7 +481,7 @@ class Sprite {
     if (operation == '/') {
       dialog.value += `division spell (/${amount})`
       if (target) {
-        target.score = target.score / amount;
+        target.score = div(target.score, amount);
         dialog.value += ` on ${target.name}.\n`
       }
       else {dialog.value += `, but there was no target.\n`}
@@ -445,12 +615,12 @@ let Player = new Sprite('Mathemagician', 'rgb(65,105,225)', 0, 100, 5, 1, 1, [
 let TileMap, spriteList, levelName, turn;
 
 function debug_mode() {
-  Player.score = Infinity;
+  Player.score = 0;
   Player.color = 'rgba(65,105,225,0.3)';
   Player.spells = new Map([
   ['additive-sign', ['+','-']],
   ['additive', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
-  ['multiplicative-sign', ['*']],
+  ['multiplicative-sign', ['*', '/']],
   ['multiplicative', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
   ['pow', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
   ])
@@ -508,16 +678,27 @@ const L1 = new Level('Ground Floor', 'Arithmetic Tower G', default_TileMap, defa
 L1.load(5,1,1);
 const L2 = new Level('First Floor', 'Arithmetic Tower 1F', [
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, [0, [5,26]], 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0]
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+[1, 0, 0, 0, 0, [0, [5,26]], 0, 0, 0, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
 ],
 [
 Player, 
-new Enemy('Magic Door 1', 'grey', 0, 100, 5, 1, 3, 0),
-new Enemy('Magic Door 2', 'grey', 0, 100, 5, 3, 1, 0),
-new Enemy('Magic Door 3', 'grey', 0, 100, 4, 2, 2, 0),
-new Enemy('Magic Door 4', 'grey', 0, 100, 6, 2, 0, 0),
+new Enemy('Magic Door 1', 'grey', 0, 5, 5, 3, 1, 0),
+new Enemy('Magic Door 2', 'grey', 0, 5, 4, 2, 2, 0),
+new Enemy('Magic Door 3', 'grey', 0, 5, 6, 2, 0, 0),
+new Enemy('Magic Door 4', 'grey', 0, 10, 9, 10, 1, 0),
+new Enemy('Guard 1', 'maroon', new Q(1,2), new Q(5,3), 3, 4, 3, 5, make_spells(2)),
+new Enemy('Guard 2', 'maroon', new Q(1,2), new Q(5,3), 7, 4, 3, 5, make_spells(2)),
 ]
 )
 const levelList = [L1, L2]
@@ -536,7 +717,7 @@ function tile_is_empty(x,y) {
       return false;
     }
   }
-  if (0 <= y && y < TileMap.length && 0 <= x && x < TileMap[y].length) {
+  if (on_tiles(x,y)) {
     return TileMap[y][x] != 1;
   }
   return true;
@@ -594,19 +775,31 @@ function draw(style = 'abstract') {
   ctx.strokeText(levelName, 5, 20);
 }
 
+function on_tiles(x,y) {
+  return 0 <= y && y < TileMap.length && 0 <= x && x < TileMap[y].length;
+}
+
 function select_dialog() {
   dialog.value += Player.toString() + '\n'
   const target = Player.get_sprite();
   if (target) {
     dialog.value += target.toString() + '\n'
   }
+  let d = 0;
+  if (on_tiles(Player.x, Player.y)) {
+    d = TileMap[Player.y][Player.x];
+  }
+  if (typeof d != 'number') {
+    dialog.value +=  `Press center [.] on the d-pad or <<Space>> to go to (${d[1][0]}, ${d[1][1]}) on ${levelList[d[0]].longname}.\n`
+  }
 }
 
 function remove() {
   spriteList = spriteList.filter(sprite => {
-    if (sprite.score == sprite.weak) {
-      dialog.value += `${sprite.name} was defeated.\n`}
-    return sprite.score != sprite.weak
+    if (equals(sprite.score, sprite.weak)) {
+      dialog.value += `${sprite.name} was defeated.\n`
+    }
+    return !equals(sprite.score, sprite.weak);
   })
 }
 
@@ -636,8 +829,11 @@ function player_input(action, n) {
       turn += 1;
     }
     if (n == 5) {
-      if (typeof TileMap[Player.y][Player.x] != 'number') {
-        const L = TileMap[Player.y][Player.x];
+      let L = 0;
+      if (on_tiles(Player.x, Player.y)) {
+        L = TileMap[Player.y][Player.x];
+      }
+      if (typeof L != 'number') {
         levelList[L[0]].load(...L[1]);
         dr = false;
       }
