@@ -111,6 +111,10 @@
         width: 30px;
         text-align: center;
       }
+      .inventory {
+        margin: 2px;
+        width: 160px;
+      }
       .item-select {
         margin: 2px;
       }
@@ -168,9 +172,7 @@
         </div>
         <br>
         <label>INVENTORY</label><br>
-        <select id="inventory">
-            <option>Sample Item x1</option>
-        </select><input class="item-select" type="button" value='Info'></input><input class="item-select" type="button" value='Use'></input><br>
+        <select class = 'inventory' id="inventory"></select><input class="item-select" id="info-item" type="button" value='Info'></input><input class="item-select" id="use-item" type="button" value='Use'></input><br>
         <br>
         <label>MOVE</label><br>
         <div class='d-pad-grid'>
@@ -189,8 +191,8 @@
         -->
         
     </div>
-    
 </div>
+<audio controls src="./Arithmetic_Tower.mp3" autoplay muted loop> Your browser does not support the <code>audio</code> element.</audio>
 <script>
 
 function gcd(a, b) {
@@ -394,6 +396,7 @@ class Sprite {
     this.spells = new Map(spells);
     this.isEnemy = false;
     this.debug = false;
+    this.items = [];
   }
 
   toString() {
@@ -435,6 +438,16 @@ class Sprite {
     return false;
   }
 
+  get_item() {
+    for (let i = 0; i < itemList.length; i++) {
+      const item = itemList[i];
+      if (item[1][0] == player.x && item[1][1] == player.y) {
+        return [item[0], i];
+      }
+    }
+    return false;
+  }
+
   display_spells() {
     for (let [key, value] of this.spells) {
       let st = '';
@@ -449,6 +462,51 @@ class Sprite {
     let value_list = this.spells.get(key);
     value_list.push(value);
     this.spells.set(key, value_list);
+  }
+
+  display_items() {
+    let st = '';
+    for (let i = 0; i < this.items.length; i++) {
+      const item = this.items[i];
+      st += `<option value = ${i}>${item[0].name} | x${item[1]}</option>\n`;
+    }
+    document.getElementById('inventory').innerHTML = st;
+  }
+
+  has_item(item) {
+    let check = false;
+    let pos = undefined;
+    for (let i = 0; i < this.items.length; i++) {
+      const a = this.items[i];
+      if (item.name == a[0].name && a[1] > 0) {
+        check = true;
+        pos = i;
+      }
+    }
+    return [check, pos]
+  }
+
+  add_item(item, n) {
+    const a = this.has_item(item);
+    if (a[0]) {
+      this.items[a[1]][1] += n;
+    }
+    else {
+      this.items.push([item, n])
+    }
+    this.display_items()
+    dialog.value += `${player.name} picked up ${item.name} (x${n}).\n`
+  }
+
+  use_item(item) {
+    const a = this.has_item(item);
+    if (a[0]) {
+      this.items[a[1]][1] -= 1;
+    }
+    dialog.value += `${player.name} used ${item.name}.\n`;
+    item.effect();
+    this.items = this.items.filter((b) => b[1]);
+    this.display_items();
   }
 
   attack(operation, amount) {
@@ -500,8 +558,8 @@ class Sprite {
 class Enemy extends Sprite {
   constructor(name, color, score, weak, x, y, d = 0, nature = 0, spells = default_spells) {
     super(name, color, score, weak, x, y, d, spells);
-    this.detection_radius = Math.abs(nature);// Enemy will move or attack if Player within distance
-    this.nature = Math.sign(nature); //+ = Aggresive (moving toward Player),  - = Timid (moving away from Player)
+    this.detection_radius = Math.abs(nature);// Enemy will move or attack if player within distance
+    this.nature = Math.sign(nature); //+ = Aggresive (moving toward player),  - = Timid (moving away from player)
     this.isEnemy = true;
   }
   AI_action(target) {
@@ -513,6 +571,7 @@ class Enemy extends Sprite {
     for (let d = 0; d < 4; d++) {
       distdirection[d] = distance(this.selected_x(d), this.selected_y(d), target.x, target.y);
     }
+    let dlist = [];
     if (this.nature == 1) {
       for (let d = 0; d < 4; d++) {
         if (distdirection[d] < dist) {
@@ -521,26 +580,32 @@ class Enemy extends Sprite {
             return 'attack';
           }
           if (tile_is_empty(this.selected_x(d), this.selected_y(d))) {
-            this.d = d;
-            return 'move';
+            dlist.push(d);
           }
         }
       }
-    }
+      if (dlist.length) {
+        this.d = dlist[Math.floor(Math.random() * dlist.length)];
+        return 'move';
+      }
+    } 
     if (this.nature == -1) {
-      for (let d = 0; d < 4; d++) {
-        if (distdirection[d] > dist) {
-          if (tile_is_empty(this.selected_x(d), this.selected_y(d))) {
-            this.d = d;
-            return 'move';
-          }
-        }
-      }
       for (let d = 0; d < 4; d++) {
         if (distdirection[d] == 0) {
           this.d = d;
           return 'attack';
         }
+      }
+      for (let d = 0; d < 4; d++) {
+        if (distdirection[d] > dist) {
+          if (tile_is_empty(this.selected_x(d), this.selected_y(d))) {
+            dlist.push(d);
+          }
+        }
+      }
+      if (dlist.length) {
+        this.d = dlist[Math.floor(Math.random() * dlist.length)];
+        return 'move';
       }
     }
     return false; 
@@ -568,27 +633,35 @@ class Enemy extends Sprite {
 }
 
 class Item {
-  constructor(name, info, effect) {
+  constructor(name, info, effect, color = 'yellow') {
     this.name = name;
     this.info = info;
-    this.effect = effect
+    this.effect = effect;
+    this.color = color;
   }
 }
 
+potion = new Item('Potion', 'Potion subtracts 20 from your current score.', () => {player.score = sub(player.score, 20)})
+superpotion = new Item('Super Potion', 'Potion subtracts 60 from your current score.', () => {player.score = sub(player.score, 60)})
+hyperpotion = new Item('Hyper Potion', 'Potion subtracts 120 from your current score.', () => {player.score = sub(player.score, 120)})
+maxpotion = new Item('Zero Potion', 'Zero Potion resets your current score to 0.', () => {player.score = 0})
+
 class Level {
-  constructor(longname, shortname, tilemap, sprites) {
+  constructor(longname, shortname, tilemap, sprites, items = []) {
     this.longname = longname;
     this.shortname = shortname;
     this.tilemap = tilemap;
     this.sprites = sprites;
+    this.items = items;
   }
-  load(x = Player.x, y = Player.y, d = Player.d) {
-    Player.x = x;
-    Player.y = y;
-    Player.d = d;
-    Player.display_spells();
-    TileMap = this.tilemap;
+  load(x = player.x, y = player.y, d = player.d) {
+    player.x = x;
+    player.y = y;
+    player.d = d;
+    player.display_spells();
+    tileMap = this.tilemap;
     spriteList = this.sprites;
+    itemList = this.items;
     turn = 0;
     levelName = this.shortname;
     ctx.clearRect(0,0, 11 * w, 11 * h);
@@ -604,32 +677,54 @@ const h = 50;
 const w = 50;
 const ctx = canvas.getContext('2d');
 const dialog = document.getElementById("dialog");
+const rainbow = ctx.createLinearGradient(0, 0, 550, 0);
+for (let i = 0; i < 11; i++) {
+  rainbow.addColorStop((7 * i) / 77, 'red');
+  rainbow.addColorStop((7 * i + 1) / 77, 'orange');
+  rainbow.addColorStop((7 * i + 2) / 77, 'yellow');
+  rainbow.addColorStop((7 * i + 3) / 77, 'green');
+  rainbow.addColorStop((7 * i + 4) / 77, 'blue');
+  rainbow.addColorStop((7 * i + 5) / 77, 'indigo');
+  rainbow.addColorStop((7 * i + 6) / 77, 'violet');  
+}
 
-let Player = new Sprite('Mathemagician', 'rgb(65,105,225)', 0, 100, 5, 1, 1, [
+
+let player = new Sprite('Mathemagician', 'rgb(65,105,225)', 0, 100, 5, 1, 1, [
   ['additive-sign', ['+']],
-  ['additive', [1, 2]],
+  ['additive', [1]],
   ['multiplicative-sign', []],
   ['multiplicative', []],
   ['pow', []],
 ]);
-let TileMap, spriteList, levelName, turn;
+let tileMap, spriteList, itemList, levelName, turn;
 
 function debug_mode() {
-  Player.score = 0;
-  Player.color = 'rgba(65,105,225,0.3)';
-  Player.spells = new Map([
-  ['additive-sign', ['+','-']],
-  ['additive', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
-  ['multiplicative-sign', ['*', '/']],
-  ['multiplicative', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
-  ['pow', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
-  ])
-  Player.display_spells();
-  Player.debug = true;
+  if (!player.debug) {
+    dialog.value = 'Debug mode ON.\n'
+    player.score = 0;
+    player.color = 'rgba(65,105,225,0.3)';
+    player.spells = new Map([
+      ['additive-sign', ['+','-']],
+      ['additive', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
+      ['multiplicative-sign', ['*', '/']],
+      ['multiplicative', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
+      ['pow', [1, 2, 3, 4, 5, 6, 7, 8, 9]],
+    ])
+    player.add_item(maxpotion,99)
+    player.debug = true;
+  }
+  else {
+    dialog.value = 'Debug mode OFF.\n'
+    player.score = 0;
+    player.color = 'rgb(65,105,225)';
+    player.debug = false;
+  }
+  player.display_spells();
+  select_dialog();
   draw();
 }
 
-const default_TileMap = 
+const default_tileMap = 
 [
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -661,7 +756,7 @@ const default_TileMap =
 [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
 ];
 const default_spriteList = [
-Player,
+player,
 new Enemy('Magic Door', 'grey', 0, 5, 5, 3, 1, 0),
 new Enemy('Gatekeeper 1', 'coral', 0, 3, 2, 6, 3, 3, make_spells(2)),
 new Enemy('Gatekeeper 2', 'coral', 0, 3, 8, 6, 3, 3, make_spells(2)),
@@ -674,34 +769,140 @@ new Enemy('Gatekeeper 4', 'coral', 0, 3, 8, 22, 1, 3, make_spells(2)),
 new Enemy('Boss', 'purple', 0, 30, 5, 14, 3, 1, make_spells(5)),
 new Enemy('Magic Door 2', 'grey', 0, 5, 5, 25, 3, 0),
 ];
-const L1 = new Level('Ground Floor', 'Arithmetic Tower G', default_TileMap, default_spriteList);
-L1.load(5,1,1);
+const L1 = new Level('Ground Floor', 'Arithmetic Tower G', [
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [1,0,1,0,1,0,1,0,1,0,1],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [1,0,1,1,1,0,1,1,1,0,1],
+  [0,0,1,0,0,0,0,0,1,0,0],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [0,0,1,1,1,0,1,1,1,0,0],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [0,0,1,0,0,0,0,0,1,0,0],
+  [1,1,1,0,0,0,0,0,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,1,0,1,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,0,1,1,1,1,1],
+  [0,0,0,0,1,[1,[5,13]],1,0,0,0,0],
+  [1,0,1,0,1,1,1,0,1,0,1],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,1,1,1,1,1,0,0,0],
+  [0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,0,1,1,1,1,1,0,0,0],
+], [
+  player,
+  new Enemy('Magic Door 1', 'grey', 0, 5, 5, 5, 3, 0),
+  new Enemy('Magic Door 2', 'grey', 0, 5, 5, 8, 3, 0),
+  new Enemy('Gatekeeper 1', 'coral', 0, 3, 5, 13, 3, 3, make_spells(1)),
+  new Enemy('Magic Door 3', 'grey', 0, 5, 5, 15, 3, 0),
+  new Enemy('Magic Door 4', 'grey', 0, -1, 3, 31, 2, 0),
+], [
+  [new Item('Info 1 (Press [Info] to read)', 'Greetings, Mathemagician. It looks like the entrance to Arithmetic Tower is up ahead. Use the arrow keys or d-pad to turn and move. Press [Use] to discard this message from your inventory.', () => {dialog.value += 'Greetings, Mathemagician. It looks like the entrance to Arithmetic Tower is up ahead. Use the arrow keys or d-pad to move.\n'}, 'orange'),[5,0]],
+  [new Item('Info 2 (Press [Info] to read)', 'The entrance is blocked by a Magic Door. Go up to it and face it to view its stats. It will dissappear when its current score matches its weakness. Use your additive spell to change its current score in order to defeat it. Press [Use] to discard this message from your inventory.', () => {dialog.value += 'The entrance is blocked by a Magic Door. Go up to it and face it to view its stats. It will dissappear when its current score matches its weakness. Use your additive spell to change its current score in order to defeat it.\n'}, 'orange'),[5,4]],
+  [new Item('Info 3 (Press [Info] to read)', 'An enemy is defeated when its current score matches its weakness. However, the same applies to yourself; be wary of enemies that chase you and attack if you get too close. Press [Use] to discard this message from your inventory.', () => {dialog.value += 'An enemy is defeated when its current score matches its weakness. However, the same applies to yourself; be wary of enemies that chase you and attack if you get too close.\n'}, 'orange'),[5,7]],
+  [new Item('Info 4 (Press [Info] to read)', 'Be on the look out for items which might help you in battle, such as potion on the other side of this room. Once you have collected the item, press [Info] to read its effects and press [Use] to use it. Press [Use] to discard this message from your inventory.', () => {dialog.value += 'Be on the look out for items which might help you in battle, such as the one on the other side of this room. Once you have collected the item, press [Info] to read its effects and press [Use] to use it.\n'}, 'orange'),[2,13]],
+  [maxpotion, [8,13]],
+  [maxpotion, [5,18]]
+]);
+L1.load(5,-3,1);
 const L2 = new Level('First Floor', 'Arithmetic Tower 1F', [
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-[1, 0, 0, 0, 0, [0, [5,26]], 0, 0, 0, 0, 1],
-[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+  [1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,1,0,1,1,1,0,1],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [1,0,1,1,1,0,1,1,1,0,1],
+  [1,0,0,1,1,0,1,1,0,0,1],
+  [1,0,1,1,1,0,1,1,1,0,1],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [1,0,1,0,0,0,0,0,1,0,1],
+  [1,0,1,1,1,0,1,1,1,0,1],
+  [1,[2,[5,1]],1,1,1,[0,[5,16]],1,1,1,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1]
 ],
 [
-Player, 
-new Enemy('Magic Door 1', 'grey', 0, 5, 5, 3, 1, 0),
-new Enemy('Magic Door 2', 'grey', 0, 5, 4, 2, 2, 0),
-new Enemy('Magic Door 3', 'grey', 0, 5, 6, 2, 0, 0),
-new Enemy('Magic Door 4', 'grey', 0, 10, 9, 10, 1, 0),
-new Enemy('Guard 1', 'maroon', new Q(1,2), new Q(5,3), 3, 4, 3, 5, make_spells(2)),
-new Enemy('Guard 2', 'maroon', new Q(1,2), new Q(5,3), 7, 4, 3, 5, make_spells(2)),
+player, 
+new Enemy('Magic Door 1', 'grey', 0, 10, 5, 2, 1, 0),
+new Enemy('Magic Door 2', 'grey', 0, 10, 1, 12, 3, 0),
+new Enemy('Magic Door 3', 'grey', 0, 10, 9, 12, 3, 0),
+new Enemy('Guard 1', 'maroon', 0, 3, 3, 6, 0, 3, make_spells(1)),
+new Enemy('Guard 2', 'maroon', 0, 3, 7, 6, 2, 3, make_spells(1)),
+new Enemy('Guard 3', 'maroon', 0, 3, 3, 3, 0, 3, make_spells(1)),
+new Enemy('Guard 4', 'maroon', 0, 3, 7, 3, 2, 3, make_spells(1)),
+new Enemy('Guard 5', 'maroon', 0, 3, 2, 8, 2, 2, make_spells(1)),
+new Enemy('Guard 6', 'maroon', 0, 3, 8, 8, 0, 2, make_spells(1)),
+], [
+  [new Item('Info 5 (Press [Info] to read)', 'When multiple enemies attack at once, it may be helpful to retreat into a corridor and engage them one at a time. Press center [.] on the d-pad or <<Space>> to wait a turn and let the enemies come to you. Press [Use] to discard this message from your inventory.', () => {dialog.value += 'When multiple enemies attack at once, it may be helpful to retreat into a corridor and engage them one at a time. Press center [.] on the d-pad or <<Space>> to wait a turn and let the enemies come to you.\n'}, 'orange'),[5,11]],
+  [maxpotion, [9,13]]
+]);
+const L3 = new Level('Second Floor', 'Arithmetic Tower 2F', [
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,[1,[5,12]],1,1,0,0,0,0,0,0,1],
+[1,0,1,1,1,1,1,1,0,1,0,0,0,0,1],
+[1,0,1,0,0,0,0,1,0,1,0,0,0,[3,[6,1]],1],
+[1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1],
+[1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+[1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+[1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+[1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+[1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+],
+[
+player, 
+new Enemy('Magic Door 1', 'grey', 0, 5, 2, 1, 0, 0),
+new Enemy('Guard 1', 'maroon', 0, 6, 1, 2, 3, 2, make_spells(3)),
+new Enemy('Magic Door 2', 'grey', 0, 5, 2, 9, 0, 0),
+new Enemy('Magic Door 3', 'grey', 0, 5, 4, 3, 0, 0),
+new Enemy('Magic Door 4', 'grey', 0, 5, 9, 1, 2, 0),
+new Enemy('Guard 2', 'maroon', 0, 6, 12, 1, 2, 1, make_spells(3)),
+new Enemy('Guard 3', 'maroon', 0, 6, 11, 2, 2, 1, make_spells(3)),
+new Enemy('Guard 4', 'maroon', 0, 6, 11, 3, 2, 1, make_spells(3)),
+new Enemy('Boss', 'black', 0, 35, 12, 2, 2, 5, make_spells(5)),
 ]
 )
-const levelList = [L1, L2]
+const L4 = new Level('Third Floor', 'Arithmetic Tower 3F', [
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+],
+[
+player, 
+new Enemy('Boss', rainbow, new Q(105, 8), new Q(8, 105), 6, 6, 3, 8, make_spells(10)),
+new Enemy('Guard 1', 'maroon', 0, new Q(1, 2), 0, 3, 3, 8, make_spells(3)),
+new Enemy('Guard 2', 'maroon', 0, new Q(1, 2), 12, 3, 3, 8, make_spells(3)),
+new Enemy('Guard 3', 'maroon', 0, new Q(1, 2), 0, 6, 3, 8, make_spells(3)),
+new Enemy('Guard 4', 'maroon', 0, new Q(1, 2), 12, 6, 3, 8, make_spells(3)),
+]
+)
+const levelList = [L1, L2, L3, L4]
 
 
 function test_view() {
@@ -718,13 +919,13 @@ function tile_is_empty(x,y) {
     }
   }
   if (on_tiles(x,y)) {
-    return TileMap[y][x] != 1;
+    return tileMap[y][x] != 1;
   }
   return true;
 }
 
 function screen_coords(x,y) {
-  return [w * (x - Player.x + 5), h * (5 - (y - Player.y))]
+  return [w * (x - player.x + 5), h * (5 - (y - player.y))]
 }
 function rotate(x,y,d) {
   const nx = [1, 0, -1, 0][d] * (x - w/2) + [0, -1, 0, 1][d] * (y-h/2) + w/2;
@@ -735,8 +936,8 @@ function rotate(x,y,d) {
 function draw(style = 'abstract') {
   ctx.clearRect(0,0, 11 * w, 11 * h);
   
-  for (let y = 0; y < TileMap.length; y++) {
-    const row = TileMap[y];
+  for (let y = 0; y < tileMap.length; y++) {
+    const row = tileMap[y];
     for (let x = 0; x < row.length; x++) {
       if (row[x] == 1) {
         const coords = screen_coords(x, y);
@@ -754,6 +955,15 @@ function draw(style = 'abstract') {
       }
     }
   }
+  for (const item of itemList) {
+    const coords = screen_coords(item[1][0], item[1][1]);
+    if (style == 'abstract') {
+      ctx.fillStyle = item[0].color;
+      ctx.beginPath();
+      ctx.arc(coords[0] + w/2, coords[1] + h/2, w * 0.3, 0, 2 * Math.PI)
+      ctx.fill();
+    }
+  }
   for (const sprite of spriteList) {
     const coords = screen_coords(sprite.x, sprite.y);
     if (style == 'abstract') {
@@ -769,25 +979,29 @@ function draw(style = 'abstract') {
     }
   }
   ctx.font = '20px serif';
-  ctx.fillStyle = 'rgb(0,0,0)';
-  ctx.fillText(levelName, 5, 20);
   ctx.fillStyle = 'rgb(255,255,255)';
+  ctx.fillText(levelName, 5, 20);
+  ctx.fillStyle = 'rgb(0,0,0)';
   ctx.strokeText(levelName, 5, 20);
 }
 
 function on_tiles(x,y) {
-  return 0 <= y && y < TileMap.length && 0 <= x && x < TileMap[y].length;
+  return 0 <= y && y < tileMap.length && 0 <= x && x < tileMap[y].length;
 }
 
 function select_dialog() {
-  dialog.value += Player.toString() + '\n'
-  const target = Player.get_sprite();
+  dialog.value += player.toString() + '\n'
+  const target = player.get_sprite();
   if (target) {
     dialog.value += target.toString() + '\n'
   }
+  const item = player.get_item();
+  if (item) {
+    dialog.value += `Press center [.] on the d-pad or <<Space>> to collect item.`
+  }
   let d = 0;
-  if (on_tiles(Player.x, Player.y)) {
-    d = TileMap[Player.y][Player.x];
+  if (on_tiles(player.x, player.y)) {
+    d = tileMap[player.y][player.x];
   }
   if (typeof d != 'number') {
     dialog.value +=  `Press center [.] on the d-pad or <<Space>> to go to (${d[1][0]}, ${d[1][1]}) on ${levelList[d[0]].longname}.\n`
@@ -807,12 +1021,12 @@ function enemyTurn() {
   for (let i = 0; i < spriteList.length; i++) {
     const enemy = spriteList[i];
     if (enemy.isEnemy) {
-      const action = enemy.AI_action(Player);
+      const action = enemy.AI_action(player);
       if (action == 'move') {
         enemy.move();
       }
       if (action == 'attack') {
-        const auto = enemy.AI_attack(Player);
+        const auto = enemy.AI_attack(player);
         enemy.attack(auto[0], auto[1]);
       }
     }
@@ -823,15 +1037,20 @@ function player_input(action, n) {
   dialog.value = ''
   let dr = true;
   if (action == 'move') {
-    if (Player.d == n && (tile_is_empty(Player.selected_x(),Player.selected_y()) || Player.debug)) {
-      Player.move();
+    if (player.d == n && ((tile_is_empty(player.selected_x(),player.selected_y()) || player.debug))) {
+      player.move();
       enemyTurn();
       turn += 1;
     }
     if (n == 5) {
       let L = 0;
-      if (on_tiles(Player.x, Player.y)) {
-        L = TileMap[Player.y][Player.x];
+      if (on_tiles(player.x, player.y)) {
+        L = tileMap[player.y][player.x];
+      }
+      const item = player.get_item();
+      if (item) {
+        player.add_item(item[0], 1);
+        itemList.splice(item[1], 1);
       }
       if (typeof L != 'number') {
         levelList[L[0]].load(...L[1]);
@@ -843,7 +1062,7 @@ function player_input(action, n) {
       }
     }
     else {
-      Player.d = n;
+      player.d = n;
     }
   }
   if (action == 'attack') {
@@ -855,9 +1074,17 @@ function player_input(action, n) {
     else {
       sign = document.getElementById(type + '-sign').value;
     }
-    Player.attack(sign, parseInt(document.getElementById(type).value, 10));
+    player.attack(sign, parseInt(document.getElementById(type).value, 10));
     enemyTurn();
     turn += 1;
+  }
+  if (action == 'item') {
+    player.use_item(player.items[parseInt(document.getElementById('inventory').value)][0]);
+    enemyTurn();
+    turn += 1;
+  }
+  if (action == 'info') {
+    dialog.value += 'Info: ' + player.items[parseInt(document.getElementById('inventory').value)][0].info + '\n';
   }
   select_dialog();
   remove();
@@ -907,6 +1134,9 @@ document.addEventListener('keydown', e => {
   if (e.code == 'KeyC') {
     player_input('attack', 2);
   }
+  if (e.code == 'KeyV') {
+    player_input('item', 0);
+  }
   if (e.code == 'KeyP') {
     debug_mode();
   }
@@ -921,7 +1151,12 @@ document.getElementById("multiply").onclick = function() {
 document.getElementById("power").onclick = function() {
   player_input('attack', 2)
 }
-
+document.getElementById("use-item").onclick = function() {
+  player_input('item', 0)
+}
+document.getElementById("info-item").onclick = function() {
+  player_input('info', 0)
+}
 
 </script>
 </body>

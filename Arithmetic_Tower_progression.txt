@@ -1,0 +1,60 @@
+--------
+ADDITIVE
+--------
+
+>> Introduce Natural Numbers <<
+>> Unlock Addition <<
+
+Counting (+1) from 0 to 10.
+
+Counting (+1) from 0 to 20.
+
+Counting (+1) from n to n + 10, for natural number n.
+
+>> Unlock number upgrades <<
+
+Addition (+k) from 0 to 10, for natural number k.
+
+Addition (+k) from 0 to 20.
+
+Addition (+k) from n to n + 20.
+
+>> Unlock Subtraction <<
+
+Subtraction (-k) from 0 to 10, for natural number k.
+
+Subtraction (-k) from 0 to 20.
+
+>> Introduce Integers <<
+
+Subtraction (-k) with negative numbers from -20 to 20.
+
+Addition and Subtraction (+k) from n - 20 to n + 20, for integers n, k.
+
+--------------
+MULTIPLICATIVE
+--------------
+
+>> Unlock Multiplication <<
+
+Multiplication (*2) from 0 to 20.
+
+Multiplication (*2, *3) from 0 to 30.
+
+Multiplication (*k) from 0 to 100.
+
+>> Unlock Division <<
+
+Division (/k) from 0 to 100.
+
+>> Introduce Rationals <<
+
+Division (/k) from 0 to 100 with rational numbers.
+
+Multiplication and Division from 0 to 100 with rational numbers.
+
+-----------
+EXPONENTIAL
+-----------
+
+
